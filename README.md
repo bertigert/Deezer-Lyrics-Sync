@@ -1,9 +1,10 @@
 # Deezer-Lyrics-Sync
 Deezer userscript which allows you to use Musixmatch's or your own lyrics in Deezer. Support unsynced, line by line synced and word by word synced lyrics.
-Tested on Brave w/ Violentmonkey.
+Tested on Brave w/ Violentmonkey.\
+Also supports the Desktop application thanks to [DeezMod](https://github.com/bertigert/DeezMod)
 
 ## Installation
-Download the userscipt js file and load it with your userscript manager.
+[Download](https://github.com/bertigert/Deezer-Lyrics-Sync/blob/main/lyrics_sync.user.js) the userscipt js file and load it with your userscript manager.
 
 ## Usage
 Retrieves lyrics from Musixmatch whenever you retrieve lyrics from Deezer in the background, no user interaction.\
@@ -29,4 +30,4 @@ The cache obviously takes up storage:
   - Each entry with line by line synced lyrics takes ~1KB of storage
   - Each entry with word by word synced lyrics takes ~2-3KB of storage
 
-Depending on what you listen to, the cache would take up between 5MB and 30MB of storage approximately.
+Depending on what you listen to, the full cache would take up between 5MB and 30MB of storage approximately.
