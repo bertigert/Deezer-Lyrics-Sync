@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description 3/9/2025, 9:58:27 PM
 // @author      Bababoiiiii
-// @version     1.0
+// @version     1.0.1
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/us/*
