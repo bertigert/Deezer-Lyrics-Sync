@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description 3/9/2025, 9:58:27 PM
 // @author      Bababoiiiii
-// @version     1.0.1
+// @version     1.0.2
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/us/*
@@ -100,7 +100,7 @@ class Deezer {
         });
         if (r.ok) {
             const data = r.json();
-            if (data.errors > 0 && data.errors[0].type === "JwtTokenExpiredError") {
+            if (data.errors && data.errors[0].type === "JwtTokenExpiredError") {
                 this.get_auth_token();
                 return this.get_lyrics(song_id);
             }
