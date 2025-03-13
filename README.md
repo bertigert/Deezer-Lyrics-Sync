@@ -23,7 +23,7 @@ The times are:
   - 90 days if the song had line by line or word by word synced lyrics
 
 ### Storage
-The cache obviously takes up storage:\
+The cache obviously takes up storage:
   - Each entry for songs without entries takes up basically 0 storage.
   - Each entry with unsynced lyrics takes ~0.5KB of storage
   - Each entry with line by line synced lyrics takes ~1KB of storage
