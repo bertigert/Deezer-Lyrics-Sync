@@ -1181,7 +1181,7 @@ class UI {
 
         const title_span = this._Element_Factory.create_span("Custom Lyrics", "Use custom lyrics, synced or not. Custom Lyrics are unaffected by cache restrictions (expiration, max track limit). Click to open the documentation.", 2);
         title_span.onclick = () => {
-            window.open("https://google.com");
+            window.open("https://github.com/bertigert/Deezer-Lyrics-Sync");
         }
         const reload_page_button = this._Element_Factory.create_button("", "Reloads the page to apply lyrics changes (Deezer caches lyrics on its own).", 1);
         reload_page_button.className = "lyrics_sync_reload_page_button";
