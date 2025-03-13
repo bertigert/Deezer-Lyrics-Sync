@@ -34,4 +34,5 @@ Depending on what you listen to, the full cache would take up between 5MB and 30
 
 ## Links
 [GitHub](https://github.com/bertigert/Deezer-Lyrics-Sync)
+
 [GreazyFork](https://greasyfork.org/en/scripts/529734)
