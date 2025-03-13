@@ -12,6 +12,16 @@ Adds a button in the music player bar which allows you to add custom lyrics and 
 
 ![image](https://github.com/user-attachments/assets/d9e0b2e8-e2bd-45d4-ae35-2829fdabb114)
 
+## Logic
+Hierarchy:
+  - Word By Word Sync > Line by Line Sync > Unsynced > No lyrics
+  - Custom Lyrics > Deezer > Musixmatch
+
+> The type of lyric has higher priority than the source.
+
+This means that whenever Deezer has better/equal lyrics than/to Musixmatch, Deezer's lyrics get used. Otherwise we use Musixmatch's lyrics, if they exist.\
+This also means that even when you have custom lyrics in the cache, if Deezer has lyrics of a better type, Deezer's get used. However, if you have custom lyrics, we never ask Musixmatch for lyrics.
+
 ## Cache
 This script uses a cache to story Musixmatch/custom lyrics.\
 The cache has a max item limit of 10,000 entries. If that is exceeded, the oldest entry gets deleted.\
