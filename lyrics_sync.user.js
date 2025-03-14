@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description 3/9/2025, 9:58:27 PM
 // @author      Bababoiiiii
-// @version     1.0.2
+// @version     1.0.3
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/us/*
@@ -16,6 +16,8 @@
 let window = unsafeWindow;
 
 class Logger {
+    static LOG_VERY_MANY_THINGS_YES_YES = true; // set to false if you dont want the console getting spammed
+    
     constructor() {
         this.log_textarea = null;
         this.PREFIXES = Object.freeze({
@@ -29,7 +31,7 @@ class Logger {
             log: (...args) => console.log(this.PREFIXES.CONSOLE, ...args),
             warn: (...args) => console.warn(this.PREFIXES.CONSOLE, ...args),
             error: (...args) => console.error(this.PREFIXES.CONSOLE, ...args),
-            debug: (...args) => console.debug(this.PREFIXES.CONSOLE, ...args)
+            debug: (...args) => {if (Logger.LOG_VERY_MANY_THINGS_YES_YES) console.debug(this.PREFIXES.CONSOLE, ...args)}
         }
         this.ui = {
             _log: (prefix, ...args) => {
@@ -202,7 +204,7 @@ class Lyrics_DB {
         store.put(data);
 
         await tx.done;
-        // logger.console.debug("Data saved to cache db");
+        // logger..consoledebug("Data saved to cache db");
     }
 
     async get_from_indexed_db(id) {
@@ -219,11 +221,11 @@ class Lyrics_DB {
         });
 
         if (!data) {
-            // logger.console.debug('Data not found in cache db');
+            logger.console.debug('Data not found in cache db');
             return null;
         }
 
-        // logger.console.debug('Data retrieved successfully from cache db');
+        logger.console.debug('Data retrieved successfully from cache db');
         return data;
     }
 
@@ -493,7 +495,7 @@ class Musixmatch {
         }
         const [status, data] = await this.make_request(Musixmatch._parse_url(this.URLS.GET_TRACK, track_isrc, this.token));
         if (status === this.RESPONSES.SUCCESS) {
-            // logger.console.debug("Got track data:", data);
+            logger.console.debug("Got track data:", data);
             return [status, data];
         }
         return [status, null];
@@ -529,7 +531,7 @@ class Musixmatch {
         }
 
         const do_request = async (url_template) => {
-            // logger.console.debug(`Getting data for track ${track_isrc}`);
+            logger.console.debug(`Getting data for track ${track_isrc}`);
             const [status, data] = await this.make_request(Musixmatch._parse_url(url_template, track_isrc, this.token, format));
             if (status === this.RESPONSES.INVALID_TOKEN) {
                 const has_new_token = await this.renew_token();
@@ -554,7 +556,7 @@ class Musixmatch {
             }
         }
         const r = await do_request(type === this.TYPES.WORD_BY_WORD ? this.URLS.WORD_BY_WORD_LYRICS : type === this.TYPES.SYNCED ? this.URLS.SYNCED_LYRICS : this.URLS.UNSYNCED_LYRICS);
-        // logger.console.debug("Musixmatch lyrics response:", r);
+        logger.console.debug("Musixmatch lyrics response:", r);
         return r;
     }
 }
@@ -775,7 +777,7 @@ class Hooks {
                 logger.console.debug('Catched original lyrics fetch call');
 
                 if (dzPlayer.getCurrentSong("LYRICS_ID") === undefined) {
-                    // logger.console.debug("This song is probably a custom mp3 or something different which cant have lyrics");
+                    logger.console.debug("This song is probably a custom mp3 or something different which cant have lyrics");
                     return orig_fetch.apply(this, args);
                 }
 
@@ -802,8 +804,8 @@ class Hooks {
 
                 if (which_deezer_lyric_type === musixmatch.TYPES.NONE) {
                     resp_json.data.track.lyrics = {
-                        copyright: dzPlayer.getArtistName(),
-                        id: "-1",
+                        copyright: `${dzPlayer.getArtistName()} - ${dzPlayer.getSongTitle()} (${dzPlayer.getAlbumTitle()})`,
+                        id: dzPlayer.getCurrentSong("LYRICS_ID"),
                         text: "No Lyrics Found",
                         synchronizedLines: null,
                         synchronizedWordByWordLines: null,
@@ -811,14 +813,14 @@ class Hooks {
                         __typename: "Lyrics"
                     }
                 }
-
+                
                 const current_song_isrc = dzPlayer.getCurrentSong("ISRC");
 
                 const cached_track_data = await lyrics_db.get_from_indexed_db(current_song_isrc);
 
                 const is_cache_expired = cached_track_data ? Lyrics_DB.is_cache_expired(cached_track_data[Lyrics_DB.INDEXES.ADDED_TIMESTAMP], cached_track_data[Lyrics_DB.INDEXES.TYPE]) : true;
                 if (!is_cache_expired) {
-                    // logger.console.debug("Cached data is not expired");
+                    logger.console.debug("Cached data is not expired");
                     if (cached_track_data[Lyrics_DB.INDEXES.TYPE] === musixmatch.TYPES.INSTRUMENTAL) {
                         logger.console.debug("Cached song is instrumental");
                     }
@@ -843,7 +845,7 @@ class Hooks {
                     }
 
                 } else {
-                    // logger.console.debug("No cached data found or expired");
+                    logger.console.debug("No cached data found or expired");
                     if (which_deezer_lyric_type === musixmatch.TYPES.WORD_BY_WORD) {
                         logger.console.debug("Song has word by word synced lyrics from deezer, getting nothing from musixmatch");
                         return new Response(JSON.stringify(resp_json), {
@@ -855,8 +857,8 @@ class Hooks {
 
                     await await_musixmatch_token;
                     const which_musixmatch_lyric_type = await musixmatch.which_lyric_type(dzPlayer.getCurrentSong("ISRC"));
-
-                    if (which_deezer_lyric_type >= which_musixmatch_lyric_type) {
+                    
+                    if (which_musixmatch_lyric_type !== musixmatch.TYPES.NONE && which_deezer_lyric_type >= which_musixmatch_lyric_type) {
                         logger.console.debug("Deezer has equal/better lyrics than musixmatch, using them");
                     }
                     else if (which_musixmatch_lyric_type === musixmatch.TYPES.NONE) {
@@ -897,7 +899,7 @@ class Hooks {
                     }
                 }
 
-                // logger.console.debug("Modified response:", resp_json);
+                logger.console.debug("Modified response:", resp_json);
 
                 // ===== REAL HOOK END =====
 
@@ -924,16 +926,19 @@ class Hooks {
                 this.hook_fetch(await_musixmatch_token);
             }
 
+            // If the song has no lyrics, LYRICS_ID does not exist, but if it does, it is always a number above 0.
+            // We set it to < 0 because then deezer think it has lyrics, but we can still tell it was set by us.
+            // Every song needs to have its own unique id, because else deezer bugs out in some parts, so we use the (unique) -SNG_ID for that.
             let orig;
             if (args.length === 0) {
                 orig = orig_getcurrsong();
                 if (!orig) return orig;
-                if (orig.ALB_ID !== 0 && (orig.LYRICS_ID === 0 || !orig.LYRICS_ID)) orig.LYRICS_ID = -1;
+                if (orig.ALB_ID !== 0 && (orig.LYRICS_ID === 0 || !orig.LYRICS_ID)) orig.LYRICS_ID = -orig.SNG_ID;
             }
             else if (args[0] === "LYRICS_ID") {
                 orig = orig_getcurrsong();
                 if (!orig) return orig;
-                if (orig.ALB_ID !== 0 && (orig.LYRICS_ID === 0 || !orig.LYRICS_ID)) orig = -1; // if type is 0, then it is a deezer song, but it has no lyrics for some reason, so we set it to -1
+                if (orig.ALB_ID !== 0 && (orig.LYRICS_ID === 0 || !orig.LYRICS_ID)) orig = -orig.SNG_ID;
                 else orig = orig.LYRICS_ID;
             }
             else {
@@ -971,7 +976,7 @@ class UI {
             parent_div.prepend(UI.create_main_button(await_deezer_token));
             logger.console.debug("UI created");
         } else {
-            // logger.console.debug("Waiting for parent");
+            logger.console.debug("Waiting for parent");
             const observer = new MutationObserver(mutations => {
                 for (let mutation of mutations) {
                     if (mutation.type === 'childList') {
@@ -1275,7 +1280,7 @@ class UI {
                 logger.ui.info("Song was not cached, getting deezer lyrics.");
 
                 const lyrics_id = dzPlayer.getCurrentSong("LYRICS_ID")
-                if (lyrics_id === -1) { // we hook the getcurrentfetch call and return -1 for the lyricsid if the song has no lyrics, it doesnt exist for song without lyrics by default
+                if (lyrics_id < 0) { // we hook the getcurrentfetch call and return < 0 for the lyricsid if the song has no lyrics, it doesnt exist for song without lyrics by default
                     logger.ui.info("No lyrics found in deezer");
                     return [null, musixmatch.TYPES.NONE, "Deezer"];
                 }
@@ -1670,7 +1675,7 @@ class Config {
 }
 
 const logger = new Logger();
-// logger.console.debug("Creating All Class Instances");
+logger.console.debug("Creating All Class Instances");
 const config = new Config();
 const lyrics_db = new Lyrics_DB();
 const musixmatch = new Musixmatch();
@@ -1678,7 +1683,7 @@ const deezer = new Deezer();
 
 (async function main() {
     const await_deezer_token = deezer.get_auth_token();
-    // logger.console.log("Creating UI");
+    logger.console.debug("Creating UI");
     UI.create_ui(await_deezer_token);
 
     const await_musixmatch_token = musixmatch.retrieve_token();
@@ -1696,7 +1701,7 @@ const deezer = new Deezer();
     `);
 
 
-    logger.console.log("Hooking dzplayer (getCurrentSong, hasLyrics)");
+    logger.console.log("Hooking dzplayer.getCurrentSong");
     const wait_for_dz_player_interval = setInterval(() => {
         if (window.dzPlayer) {
             clearInterval(wait_for_dz_player_interval);
