@@ -73,7 +73,7 @@ The cache obviously takes up storage:
   - Each entry with line by line synced lyrics takes ~1KB of storage
   - Each entry with word by word synced lyrics takes ~2-3KB of storage
 
-Depending on what you listen to, the full cache would take up between 5MB and 30MB of storage approximately.
+Depending on what you listen to, the full cache would take up between 5MB and 30MB of storage approximately (not accounting for DB overhead, so add like 20% on top of that).
 
 ## Links
 [GitHub](https://github.com/bertigert/Deezer-Lyrics-Sync)
