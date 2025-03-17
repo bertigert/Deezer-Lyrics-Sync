@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description Musixmatch and Custom Lyrics Integration for Deezer Web
 // @author      bertigert
-// @version     1.0.5
+// @version     1.0.6
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/*
@@ -1261,7 +1261,7 @@ class UI {
             config.block_song_versions.regex = block_song_version_regex_input.value;
 
         }
-        const [block_song_version_enabled_label, block_song_version_enabled_checkbox] = this._Element_Factory.create_checkbox("Block Versions", "Block lyrics for song versions that match the regex (e.g. Remixes).", 1);
+        const [block_song_version_enabled_label, block_song_version_enabled_checkbox] = this._Element_Factory.create_checkbox("Block Version", "Block lyrics for song versions that match the regex (e.g. Remixes).", 1);
         block_song_version_enabled_checkbox.checked = config.block_song_versions.enabled;
         block_song_version_enabled_checkbox.onchange = () => {
             config.block_song_versions.enabled = block_song_version_enabled_checkbox.checked;
@@ -1768,7 +1768,8 @@ class UI {
             }
             #page_player > div.player-lyrics-full > div > div span,
             #page_player > div.player-lyrics-full > div > div p:where(:not(span)),
-            #page_player > div.player-lyrics-full > div > div button {
+            #page_player > div.player-lyrics-full > div > div button,
+            #page_player > div.player-lyrics-full > div > div svg {
                 color: var(--lyrics-sync-forced-font-color) !important;
             }
             #page_player > div.player-lyrics-full > div > div circle.chakra-progress__indicator {
