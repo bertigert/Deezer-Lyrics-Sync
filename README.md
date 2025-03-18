@@ -1,4 +1,4 @@
-# Deezer-Lyrics-Sync
+# MusixMatch for Deezer
 Deezer userscript which allows you to use Musixmatch's or your own lyrics in Deezer. Support unsynced, line by line synced and word by word synced lyrics.
 Tested on Brave w/ Violentmonkey.\
 Also supports the Desktop application thanks to [DeezMod](https://github.com/bertigert/DeezMod) (Download [here](https://github.com/bertigert/DeezMod/tree/main/plugins/lyrics_sync))
