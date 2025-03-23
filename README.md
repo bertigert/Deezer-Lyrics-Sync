@@ -4,7 +4,8 @@ Tested on Brave w/ Violentmonkey.\
 Also supports the Desktop application thanks to [DeezMod](https://github.com/bertigert/DeezMod) (Download [here](https://github.com/bertigert/DeezMod/tree/main/plugins/lyrics_sync))
 
 ## Installation
-[Download](https://github.com/bertigert/Deezer-Lyrics-Sync/blob/main/lyrics_sync.user.js) the userscipt js file and load it with your userscript manager.
+[Download](https://github.com/bertigert/Deezer-Lyrics-Sync/blob/main/lyrics_sync.user.js) the userscipt js file and load it with your userscript manager.\
+Also available on [greazyfork](https://greasyfork.org/en/scripts/529734-deezer-lyrics-sync)
 
 ## Usage
 Retrieves lyrics from Musixmatch whenever you retrieve lyrics from Deezer in the background, no user interaction.\
@@ -56,7 +57,7 @@ The offset is a global counter meaning it is additive and applies to every line 
 In the example above we specify an offset of `+5000ms` at the beginning of the song. This means that the lyrics are delayed 5 seconds from that point on. We then later add an offset of `-5000ms`, which in this case cancels out the delay from before, meaning that the lyrics are now normal again.
 
 ## Cache
-This script uses a cache to story Musixmatch/custom lyrics.\
+This script uses a cache to store Musixmatch/custom lyrics.\
 The cache has a max item limit of 10,000 entries. If that is exceeded, the oldest entry gets deleted.\
 Custom Lyrics are always treated as new entries. This means they **can** get deleted, but really only when you have 10,000 custom lyric entries.\
 Similar thing goes for instrumental songs. They are always treated as the newest entries besides custom lyrics.\
