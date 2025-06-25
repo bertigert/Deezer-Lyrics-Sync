@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description Musixmatch and Custom Lyrics Integration for Deezer Web
 // @author      bertigert
-// @version     1.0.7
+// @version     1.0.8
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/*
@@ -215,7 +215,6 @@ class Lyrics_DB {
         const tx = db.transaction(this.store_name, 'readonly');
         const store = tx.objectStore(this.store_name);
 
-
         const data = await new Promise((resolve, reject) => {
             const request = store.get(id);
             request.onerror = () => reject('Error retrieving data');
@@ -364,9 +363,9 @@ class Musixmatch {
     URLS = Object.freeze({
         TOKEN: "https://apic.musixmatch.com/ws/1.1/token.get?app_id=android-player-v1.0&guid={0}&format=json",
         GET_TRACK: "https://apic.musixmatch.com/ws/1.1/track.get?track_isrc={0}&usertoken={1}&app_id=android-player-v1.0&format=json",
-        UNSYNCED_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.lyrics.get?track_isrc={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json",
-        SYNCED_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.subtitle.get?track_isrc={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json&subtitle_format={2}&f_subtitle_length={3}$f_subtitle_length_max_deviation={4}",
-        WORD_BY_WORD_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.richsync.get?track_isrc={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json&f_richsync_length={2}&f_richsync_length_max_deviation={3}"
+        UNSYNCED_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.lyrics.get?commontrack_id={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json",
+        SYNCED_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.subtitle.get?commontrack_id={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json&subtitle_format={2}&f_subtitle_length={3}&f_subtitle_length_max_deviation={4}",
+        WORD_BY_WORD_LYRICS: "https://apic.musixmatch.com/ws/1.1/track.richsync.get?commontrack_id={0}&page_size=1&usertoken={1}&app_id=android-player-v1.0&format=json&f_richsync_length={2}&f_richsync_length_max_deviation={3}"
     });
     TYPES = Object.freeze({ // sorted by hierarchy
         NONE: 0,
@@ -399,6 +398,7 @@ class Musixmatch {
                         if (response.status === 200) {
                             const data = JSON.parse(response.responseText);
                             const header = data.message?.header;
+                            // logger.console.debug("Got track data for lyric type:", data, "header:", header, "headers:", response.headers);
 
                             if (header?.status_code === 401) {
                                 switch (header.hint) {
@@ -506,24 +506,24 @@ class Musixmatch {
         const [status, data] = await this.get_track(track_isrc);
         if (status === this.RESPONSES.SUCCESS) {
             if (data.message.body.track.instrumental === 1) {
-                return this.TYPES.INSTRUMENTAL;
+                return [data.message.body.track.commontrack_id, this.TYPES.INSTRUMENTAL];
             }
             if (data.message.body.track.has_richsync && config.musixmatch.types.word_by_word) {
-                return this.TYPES.WORD_BY_WORD;
+                return [data.message.body.track.commontrack_id, this.TYPES.WORD_BY_WORD];
             }
             if (data.message.body.track.has_subtitles && config.musixmatch.types.synced) {
-                return this.TYPES.SYNCED;
+                return [data.message.body.track.commontrack_id, this.TYPES.SYNCED];
             }
             if (data.message.body.track.has_lyrics && config.musixmatch.types.unsynced) {
-                return this.TYPES.UNSYNCED;
+                return [data.message.body.track.commontrack_id, this.TYPES.UNSYNCED];
             }
         }
-        return this.TYPES.NONE;
+        return [null, this.TYPES.NONE];
     }
 
-    async get_musixmatch_lyrics(track_isrc, type, format="lrc") {
-        if (!track_isrc) {
-            logger.console.debug("No track isrc provided");
+    async get_musixmatch_lyrics(commontrack_id, type, format="lrc") {
+        if (!commontrack_id) {
+            logger.console.debug("No commontrack id provided");
             return [this.RESPONSES.NOT_FOUND, null];
         }
 
@@ -536,27 +536,27 @@ class Musixmatch {
         const max_deviation = 10; // 5 seconds
 
         const do_request = async (url_template) => {
-            logger.console.debug(`Getting data for track ${track_isrc}`);
-            const [status, data] = await this.make_request(Musixmatch._parse_url(url_template, track_isrc, this.token, format, song_duration, max_deviation));
+            logger.console.debug(`Getting data for track ${commontrack_id}`);
+            const [status, data] = await this.make_request(Musixmatch._parse_url(url_template, commontrack_id, this.token, format, song_duration, max_deviation));
             if (status === this.RESPONSES.INVALID_TOKEN) {
                 const has_new_token = await this.renew_token();
                 if (has_new_token) {
-                    return await do_request(Musixmatch._parse_url(url_template, track_isrc, this.token, format, song_duration, max_deviation));
+                    return await do_request(Musixmatch._parse_url(url_template, commontrack_id, this.token, format, song_duration, max_deviation));
                 }
                 logger.console.error("Failed to get new token, stopping script");
                 Hooks.toggle_hooks(false, Hooks.HOOK_INDEXES.ALL); // if we can't get a new token, we just stop this script this session basically
                 return [status, null];
             }
             if (status === this.RESPONSES.NOT_FOUND) {
-                logger.console.debug(`Lyrics for track ${track_isrc} not found`);
+                logger.console.debug(`Lyrics for track ${commontrack_id} not found`);
                 return [status, null];
             }
             if (status === this.RESPONSES.SUCCESS) {
-                logger.console.debug(`Got lyrics for track ${track_isrc}`);
+                logger.console.debug(`Got lyrics for track ${commontrack_id}`);
                 return [status, data];
             }
             else {
-                logger.console.log(`Failed to get ${type} lyrics for track ${track_isrc}, status: ${status}`);
+                logger.console.log(`Failed to get ${type} lyrics for track ${commontrack_id}, status: ${status}`);
                 return [status, null];
             }
         }
@@ -892,7 +892,7 @@ class Hooks {
                     }
 
                     await await_musixmatch_token;
-                    const which_musixmatch_lyric_type = await musixmatch.which_lyric_type(current_song_isrc);
+                    const [commontrack_id, which_musixmatch_lyric_type] = await musixmatch.which_lyric_type(current_song_isrc);
 
                     if (which_musixmatch_lyric_type !== musixmatch.TYPES.NONE && which_deezer_lyric_type >= which_musixmatch_lyric_type) { // enum is sorted by hierarchy
                         logger.console.debug("Deezer has equal/better lyrics than musixmatch, using them");
@@ -908,7 +908,7 @@ class Hooks {
                         await lyrics_db.save_to_indexed_db(current_song_isrc, Lyrics_DB.CACHE_TIMESTAMPS.INSTRUMENTAL, null, musixmatch.TYPES.INSTRUMENTAL);
                     }
                     else {
-                        const [status, data] = await musixmatch.get_musixmatch_lyrics(current_song_isrc, which_musixmatch_lyric_type);
+                        const [status, data] = await musixmatch.get_musixmatch_lyrics(commontrack_id, which_musixmatch_lyric_type);
                         if (status === musixmatch.RESPONSES.SUCCESS) {
                             if (which_musixmatch_lyric_type === musixmatch.TYPES.WORD_BY_WORD) {
                                 logger.console.debug("Song has word by word lyrics from musixmatch");
@@ -932,7 +932,7 @@ class Hooks {
                             }
                         }
                         else if (status === musixmatch.RESPONSES.NOT_FOUND) {
-                            await lyrics_db.save_to_indexed_db(current_song_isrc, Date.now(), null, which_musixmatch_lyric_type);
+                            await lyrics_db.save_to_indexed_db(current_song_isrc, Date.now(), null, musixmatch.TYPES.NONE);
                         }
                     }
                 }
