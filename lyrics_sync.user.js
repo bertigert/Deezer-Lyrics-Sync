@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description Musixmatch and Custom Lyrics Integration for Deezer Web
 // @author      bertigert
-// @version     1.0.6
+// @version     1.0.7
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/*
@@ -761,7 +761,7 @@ class Hooks {
 
     static hook_fetch(await_musixmatch_token) {
         const orig_fetch = window.fetch;
-        window.fetch = async function (...args) {
+        async function hooked_fetch(...args) {
             if (!Hooks.is_fetch_hooked) return orig_fetch.apply(this, args);
 
             try {
@@ -951,6 +951,15 @@ class Hooks {
                 return orig_fetch.apply(this, args);
             }
         }
+        // only change the function which gets called, not the attributes of the original fetch function
+        Object.setPrototypeOf(hooked_fetch, orig_fetch);
+        Object.getOwnPropertyNames(orig_fetch).forEach(prop => {
+            try {
+                hooked_fetch[prop] = orig_fetch[prop];
+            } catch (e) {
+            }
+        });
+        window.fetch = hooked_fetch;
         window.fetch._modified_by_lyrics_sync_plugin = true;
     }
 
@@ -959,7 +968,7 @@ class Hooks {
         dzPlayer.getCurrentSong = (...args) => {
             if (!Hooks.is_get_current_song_hooked) return orig_getcurrsong.apply(dzPlayer, args);
             if (!window.fetch._modified_by_lyrics_sync_plugin) { // it reinitializes fetch sometimes, so the hook gets removed
-                logger.console.log("Hooking fetch");
+                // logger.console.debug("Hooking fetch");
                 this.hook_fetch(await_musixmatch_token);
             }
 
