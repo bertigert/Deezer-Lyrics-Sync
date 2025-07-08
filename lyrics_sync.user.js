@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description Musixmatch and Custom Lyrics Integration for Deezer Web
 // @author      bertigert
-// @version     1.0.8
+// @version     1.0.9
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/*
@@ -502,6 +502,21 @@ class Musixmatch {
         }
         return [status, null];
     }
+
+    is_musixmatch_needed(deezer_lyrics_type) {
+        if (
+            config.musixmatch.enabled &&
+            config.musixmatch.types.word_by_word && deezer_lyrics_type < this.TYPES.WORD_BY_WORD ||
+            config.musixmatch.types.synced && deezer_lyrics_type < this.TYPES.SYNCED ||
+            config.musixmatch.types.unsynced && deezer_lyrics_type < this.TYPES.UNSYNCED
+        ) {
+            logger.console.debug("Deezer has lower quality lyrics than what we want from Musixmatch and musixmatch is enabled");
+            return true;
+        }
+        logger.console.debug("Deezer has better or equal quality lyrics than what we want from Musixmatch or musixmatch is disabled");
+        return false;
+    }
+
     async which_lyric_type(track_isrc) {
         const [status, data] = await this.get_track(track_isrc);
         if (status === this.RESPONSES.SUCCESS) {
@@ -882,7 +897,7 @@ class Hooks {
                 }
                 else {
                     logger.console.debug("No cached data found or expired");
-                    if (which_deezer_lyric_type === musixmatch.TYPES.WORD_BY_WORD) {
+                    if (!musixmatch.is_musixmatch_needed(which_deezer_lyric_type)) {
                         logger.console.debug("Song has word by word synced lyrics from deezer, getting nothing from musixmatch");
                         return new Response(JSON.stringify(resp_json), {
                             status: response.status,
