@@ -2,7 +2,7 @@
 // @name        Deezer Lyrics Sync
 // @description Musixmatch and Custom Lyrics Integration for Deezer Web
 // @author      bertigert
-// @version     1.0.9
+// @version     1.0.10
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=deezer.com
 // @namespace   Violentmonkey Scripts
 // @match       https://www.deezer.com/*
